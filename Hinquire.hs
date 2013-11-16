@@ -7,7 +7,12 @@ This is like a test to see if I can make inquire's ideal typecheck properly.
 -- rel and bool should not be strings, they should have their own types.
 data Inquire = Predicate {key :: String, val :: String, rel :: String}
     | Group {bool :: String, i1 :: Inquire, i2 :: Inquire}
-    deriving (Eq, Show)
+    deriving (Eq)
+
+instance Show Inquire where
+    show Predicate {key=k, val=v, rel=r} = k++r++v
+    show Group     {bool=b, i1=l, i2=r}  =
+        "(" ++ show l ++ ")" ++ b ++ "(" ++ show r ++ ")"
 
 main :: IO ()
 main = do
