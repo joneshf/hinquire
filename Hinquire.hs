@@ -1,19 +1,32 @@
 module Main where
 
+import Data.Monoid
+
 {-
 This is like a test to see if I can make inquire's ideal typecheck properly.
 -}
 
 -- rel and bool should not be strings, they should have their own types.
 data Relation = Equal | NEqual | GThan | GThanE | LThan | LThanE
+    deriving Eq
 
 data GBool = And | Or
+    deriving Eq
 
 data WBool = NoBool | AndNot | Not
+    deriving Eq
 
 data Inquire = Predicate {key :: String, val :: String, rel :: Relation}
     | Group {bool :: GBool, inq1 :: Inquire, inq2 :: Inquire}
     | Wrap {maybeNot :: WBool, inq :: Inquire}
+    deriving Eq
+
+-- Monoid
+instance Monoid Inquire where
+    mempty = Predicate {key="", val="", rel=Equal}
+    i1 `mappend` i2 = Group {bool=And, inq1=i1, inq2=i2}
+
+-- Show stuff.
 
 instance Show Relation where
     show Equal  = "="
@@ -51,9 +64,12 @@ main = do
     let q2 = Predicate {key="shape", val="round", rel=NEqual}
     let q3 = Group {bool=Or, inq1=q1, inq2=q2}
     let q4 = Group {bool=And, inq1=q1, inq2=q3}
+    let q4' = q1 <> q3
     let notQ3 = Wrap {maybeNot=Not, inq=q3}
     print $ generate q1
     print $ generate q2
     print $ generate q3
     print $ generate q4
+    print $ generate q4'
+    print $ "q4 == q4': " ++ show (q4 == q4')
     print $ generate notQ3
