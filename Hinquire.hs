@@ -29,20 +29,17 @@ instance Show GBool where
 
 instance Show WBool where
     show NoBool = ""
-    -- I'm not sure if `AndNot` is actually needed,
-    -- but I ran into it with the ls version.
-    show AndNot = "&!"
     show Not    = "!"
 
 instance Show Inquire where
-    show Predicate {key=k, val=v, rel=r}    = k ++ show r ++ v
-    show Group     {bool=b, inq1=p1@(Predicate {}), inq2=p2@(Predicate {})} =
+    show Predicate {key=k, val=v, rel=r} = k ++ show r ++ v
+    show Group     {bool=b, inq1=p1@Predicate {}, inq2=p2@Predicate {}} =
         show p1 ++ show b ++ show p2
-    show Group     {bool=b, inq1=p@(Predicate {}), inq2=r} =
+    show Group     {bool=b, inq1=p@Predicate {}, inq2=r} =
         show p ++ show b ++ "(" ++ show r ++ ")"
-    show Group     {bool=b, inq1=l, inq2=p@(Predicate {})} =
+    show Group     {bool=b, inq1=l, inq2=p@Predicate {}} =
         "(" ++ show l ++ ")" ++ show b ++ show p
-    show Wrap      {maybeNot=n, inq=i}      = show n ++ "(" ++ show i ++ ")"
+    show Wrap      {maybeNot=n, inq=i} = show n ++ "(" ++ show i ++ ")"
 
 -- Slap a question mark in front of our inquire.
 generate :: Inquire -> String
