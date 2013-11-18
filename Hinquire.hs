@@ -36,17 +36,27 @@ instance Show WBool where
 
 instance Show Inquire where
     show Predicate {key=k, val=v, rel=r}    = k ++ show r ++ v
-    show Group     {bool=b, inq1=l, inq2=r} =
-        "(" ++ show l ++ ")" ++ show b ++ "(" ++ show r ++ ")"
+    show Group     {bool=b, inq1=p1@(Predicate {}), inq2=p2@(Predicate {})} =
+        show p1 ++ show b ++ show p2
+    show Group     {bool=b, inq1=p@(Predicate {}), inq2=r} =
+        show p ++ show b ++ "(" ++ show r ++ ")"
+    show Group     {bool=b, inq1=l, inq2=p@(Predicate {})} =
+        "(" ++ show l ++ ")" ++ show b ++ show p
     show Wrap      {maybeNot=n, inq=i}      = show n ++ "(" ++ show i ++ ")"
+
+-- Slap a question mark in front of our inquire.
+generate :: Inquire -> String
+generate = ('?':) . show
 
 main :: IO ()
 main = do
     let q1 = Predicate {key="color", val="red", rel=Equal}
     let q2 = Predicate {key="shape", val="round", rel=NEqual}
     let q3 = Group {bool=Or, inq1=q1, inq2=q2}
+    let q4 = Group {bool=And, inq1=q1, inq2=q3}
     let notQ3 = Wrap {maybeNot=Not, inq=q3}
-    print q1
-    print q2
-    print q3
-    print notQ3
+    print $ generate q1
+    print $ generate q2
+    print $ generate q3
+    print $ generate q4
+    print $ generate notQ3
