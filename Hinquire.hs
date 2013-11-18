@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module Main where
 
 import Data.Monoid
@@ -16,13 +18,21 @@ data GBool = And | Or
 data WBool = NoBool | AndNot | Not
     deriving Eq
 
-data Inquire = Predicate {key :: String, val :: String, rel :: Relation}
-    | Group {bool :: GBool, inq1 :: Inquire, inq2 :: Inquire}
-    | Wrap {maybeNot :: WBool, inq :: Inquire}
+data Inquire a = Predicate {key :: a, val :: a, rel :: Relation}
+    | Group {bool :: GBool, inq1 :: Inquire a, inq2 :: Inquire a}
+    | Wrap {maybeNot :: WBool, inq :: Inquire a}
     deriving Eq
 
--- Monoid
-instance Monoid Inquire where
+-- Algebra stuff
+
+instance Functor Inquire where
+    fmap f Predicate {key=k, val=v, rel=r}  =
+        Predicate {key=f k, val=f v, rel=r}
+    fmap f Group {bool=b, inq1=i1, inq2=i2} =
+        Group {bool=b, inq1=fmap f i1, inq2=fmap f i2}
+    fmap f Wrap {maybeNot=n, inq=i}         = Wrap {maybeNot=n, inq=fmap f i}
+
+instance Monoid (Inquire String) where
     mempty = Predicate {key="", val="", rel=Equal}
     i1 `mappend` i2 = Group {bool=And, inq1=i1, inq2=i2}
 
@@ -44,7 +54,7 @@ instance Show WBool where
     show NoBool = ""
     show Not    = "!"
 
-instance Show Inquire where
+instance Show (Inquire String) where
     show Predicate {key=k, val=v, rel=r} = k ++ show r ++ v
     show Group     {bool=b, inq1=p1@Predicate {}, inq2=p2@Predicate {}} =
         show p1 ++ show b ++ show p2
@@ -55,7 +65,7 @@ instance Show Inquire where
     show Wrap      {maybeNot=n, inq=i} = show n ++ "(" ++ show i ++ ")"
 
 -- Slap a question mark in front of our inquire.
-generate :: Inquire -> String
+generate :: Inquire String -> String
 generate = ('?':) . show
 
 main :: IO ()
@@ -73,3 +83,5 @@ main = do
     print $ generate q4'
     print $ "q4 == q4': " ++ show (q4 == q4')
     print $ generate notQ3
+    print $ fmap tail q4
+    print $ generate $ q4 <> mempty
