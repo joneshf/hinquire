@@ -1,12 +1,15 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-
+    This pragma is the only thing stopping me going insane with monoids.
+    Not really, but the `Inquire` data should be parameterized better.
+    I mean, we're restricted to one data type throughout the entire query.
+
+    It'd be nice if we could parameterize it on a "JSON" type or something.
+-}
 
 module Main where
 
 import Data.Monoid
-
-{-
-This is like a test to see if I can make inquire's ideal typecheck properly.
--}
 
 -- rel and bool should not be strings, they should have their own types.
 data Relation = Equal | NEqual | GThan | GThanE | LThan | LThanE
