@@ -12,18 +12,34 @@ module Main where
 import Data.Monoid
 
 -- rel and bool should not be strings, they should have their own types.
-data Relation = Equal | NEqual | GThan | GThanE | LThan | LThanE
+data Relation = Equal
+              | NEqual
+              | GThan
+              | GThanE
+              | LThan
+              | LThanE
     deriving Eq
 
-data GBool = And | Or
+data GBool = And
+           | Or
     deriving Eq
 
-data WBool = NoBool | AndNot | Not
+data WBool = NoBool
+           | AndNot
+           | Not
     deriving Eq
 
-data Inquire a = Predicate {key :: a, val :: a, rel :: Relation}
-    | Group {bool :: GBool, inq1 :: Inquire a, inq2 :: Inquire a}
-    | Wrap {maybeNot :: WBool, inq :: Inquire a}
+data Inquire a = Predicate { key :: a
+                           , val :: a
+                           , rel :: Relation
+                           }
+               | Group { bool :: GBool
+                       , inq1 :: Inquire a
+                       , inq2 :: Inquire a
+                       }
+               | Wrap { maybeNot :: WBool
+                      , inq :: Inquire a
+                      }
     deriving Eq
 
 -- Algebra stuff
