@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveFoldable, DeriveFunctor, FlexibleInstances #-}
 {-
     This pragma is the only thing stopping me going insane with monoids.
     Not really, but the `Inquire` data should be parameterized better.
@@ -9,6 +9,7 @@
 
 module Main where
 
+import Data.Foldable
 import Data.Monoid
 
 -- rel and bool should not be strings, they should have their own types.
@@ -29,7 +30,7 @@ data WBool = NoBool
            | Not
     deriving Eq
 
-data Inquire a = Predicate { key :: a
+data Inquire a = Predicate { key :: String
                            , val :: a
                            , rel :: Relation
                            }
@@ -40,16 +41,9 @@ data Inquire a = Predicate { key :: a
                | Wrap { maybeNot :: WBool
                       , inq :: Inquire a
                       }
-    deriving Eq
+    deriving (Eq, Foldable, Functor)
 
 -- Algebra stuff
-
-instance Functor Inquire where
-    fmap f Predicate {key=k, val=v, rel=r}  =
-        Predicate {key=f k, val=f v, rel=r}
-    fmap f Group {bool=b, inq1=i1, inq2=i2} =
-        Group {bool=b, inq1=fmap f i1, inq2=fmap f i2}
-    fmap f Wrap {maybeNot=n, inq=i}         = Wrap {maybeNot=n, inq=fmap f i}
 
 instance Monoid (Inquire String) where
     mempty = Predicate {key="", val="", rel=Equal}
@@ -102,5 +96,8 @@ main = do
     print $ generate q4'
     print $ "q4 == q4': " ++ show (q4 == q4')
     print $ generate notQ3
-    print $ fmap tail q4
     print $ generate $ q4 <> mempty
+    -- Do some functor thing.
+    print $ fmap tail q4
+    -- Do some foldable thing.
+    print $ "red" `Data.Foldable.elem` q4
