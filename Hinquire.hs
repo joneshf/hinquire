@@ -30,24 +30,17 @@ data WBool = NoBool
            | Not
     deriving Eq
 
-data Inquire a = Predicate { key :: String
-                           , val :: a
-                           , rel :: Relation
-                           }
-               | Group { bool :: GBool
-                       , inq1 :: Inquire a
-                       , inq2 :: Inquire a
-                       }
-               | Wrap { maybeNot :: WBool
-                      , inq :: Inquire a
-                      }
+data Inquire k v = Atom
+                 | Predicate k Relation v
+                 | Group (Inquire k v) GBool (Inquire k v)
+                 | Wrap WBool (Inquire k v)
     deriving (Eq, Foldable, Functor)
 
 -- Algebra stuff
 
-instance Monoid (Inquire String) where
-    mempty = Predicate {key="", val="", rel=Equal}
-    i1 `mappend` i2 = Group {bool=And, inq1=i1, inq2=i2}
+instance Monoid (Inquire k v) where
+    mempty = empty
+    mappend = inqAnd
 
 -- Show stuff.
 
@@ -67,28 +60,34 @@ instance Show WBool where
     show NoBool = ""
     show Not    = "!"
 
-instance Show (Inquire String) where
-    show Predicate {key=k, val=v, rel=r} = k ++ show r ++ v
-    show Group     {bool=b, inq1=p1@Predicate {}, inq2=p2@Predicate {}} =
+instance (Show k, Show v) => Show (Inquire k v) where
+    show (Predicate k r v) = show k ++ show r ++ show v
+    show (Group p1@Predicate {} b p2@Predicate {}) =
         show p1 ++ show b ++ show p2
-    show Group     {bool=b, inq1=p@Predicate {}, inq2=r} =
+    show (Group p@Predicate {} b r) =
         show p ++ show b ++ "(" ++ show r ++ ")"
-    show Group     {bool=b, inq1=l, inq2=p@Predicate {}} =
+    show (Group l b p@Predicate {}) =
         "(" ++ show l ++ ")" ++ show b ++ show p
-    show Wrap      {maybeNot=n, inq=i} = show n ++ "(" ++ show i ++ ")"
+    show (Wrap n i) = show n ++ "(" ++ show i ++ ")"
+
+empty :: Inquire k v
+empty = Atom
+
+inqAnd :: Inquire k v -> Inquire k v -> Inquire k v
+inqAnd i1 = Group i1 And
 
 -- Slap a question mark in front of our inquire.
-generate :: Inquire String -> String
+generate :: (Show v, Show k) => Inquire k v -> String
 generate = ('?':) . show
 
 main :: IO ()
 main = do
-    let q1 = Predicate {key="color", val="red", rel=Equal}
-    let q2 = Predicate {key="shape", val="round", rel=NEqual}
-    let q3 = Group {bool=Or, inq1=q1, inq2=q2}
-    let q4 = Group {bool=And, inq1=q1, inq2=q3}
+    let q1 = Predicate "color" Equal "red"
+    let q2 = Predicate "shape" NEqual "round"
+    let q3 = Group q1 Or q2
+    let q4 = Group q1 And q3
     let q4' = q1 <> q3
-    let notQ3 = Wrap {maybeNot=Not, inq=q3}
+    let notQ3 = Wrap Not q3
     print $ generate q1
     print $ generate q2
     print $ generate q3
