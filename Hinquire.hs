@@ -1,7 +1,9 @@
 module Main where
 
+import Control.Applicative (Applicative, pure, (<*>), (<$>))
 import Data.Bifoldable
 import Data.Bifunctor
+import Data.Bitraversable
 import Data.Char
 import Data.Monoid
 import Prelude hiding (foldr)
@@ -47,8 +49,14 @@ instance Bifoldable Inquire where
     bifoldMap f g (Group i1 _ i2) = bifoldMap f g i1 `mappend` bifoldMap f g i2
     bifoldMap f g (Wrap _ i) = bifoldMap f g i
 
+instance Bitraversable Inquire where
+    bitraverse _ _ Atom = pure Atom
+    bitraverse f g (Predicate k r v) = Predicate <$> f k <*> pure r <*> g v
+    bitraverse f g (Group i1 b i2) =
+        Group <$> bitraverse f g i1 <*> pure b <*> bitraverse f g i2
+    bitraverse f g (Wrap b i) = Wrap <$> pure b <*> bitraverse f g i
+
 -- Show stuff.
--- This is really ugly to me, perhaps there's a better way.
 
 instance Show Relation where
     show Equal  = "="
@@ -66,20 +74,18 @@ instance Show WBool where
     show NoBool = ""
     show Not    = "!"
 
+-- This is really ugly to me, perhaps there's a better way.
+
 instance (Show k, Show v) => Show (Inquire k v) where
     show Atom = ""
     show (Predicate k r v) = show k ++ show r ++ show v
     show (Group Atom _ Atom) = ""
     show (Group Atom _ r) = show r
-    show (Group l _ Atom) = show l
-    show (Group p1@Predicate {} b p2@Predicate {}) =
-        show p1 ++ show b ++ show p2
-    show (Group p@Predicate {} b r) =
-        show p ++ show b ++ "(" ++ show r ++ ")"
-    show (Group l b p@Predicate {}) =
-        "(" ++ show l ++ ")" ++ show b ++ show p
-    show (Group l b r) =
-        "(" ++ show l ++ ")" ++ show b ++ "(" ++ show r ++ ")"
+    show (Group l    _ Atom) = show l
+    show (Group l@Predicate {} b r@Predicate {}) = show l ++ show b ++ show r
+    show (Group l@Predicate {} b r) = show l ++ show b ++ "(" ++ show r ++ ")"
+    show (Group l b r@Predicate {}) = "(" ++ show l ++ ")" ++ show b ++ show r
+    show (Group l b r) = "(" ++ show l ++ ")" ++ show b ++ "(" ++ show r ++ ")"
     show (Wrap n i) = show n ++ "(" ++ show i ++ ")"
 
 empty :: Inquire k v
