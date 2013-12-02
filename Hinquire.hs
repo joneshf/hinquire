@@ -1,11 +1,3 @@
-{-
-    This pragma is the only thing stopping me going insane with monoids.
-    Not really, but the `Inquire` data should be parameterized better.
-    I mean, we're restricted to one data type throughout the entire query.
-
-    It'd be nice if we could parameterize it on a "JSON" type or something.
--}
-
 module Main where
 
 import Data.Bifoldable
