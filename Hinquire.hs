@@ -8,7 +8,9 @@
 
 module Main where
 
-import Data.Foldable
+import Data.Bifoldable
+import Data.Bifunctor
+import Data.Char
 import Data.Monoid
 import Prelude hiding (foldr)
 
@@ -41,17 +43,17 @@ instance Monoid (Inquire k v) where
     mempty = empty
     mappend = (<&&&>)
 
-instance Functor (Inquire k) where
-    fmap _ Atom = Atom
-    fmap f (Predicate k r v) = Predicate k r (f v)
-    fmap f (Group i1 b i2) = Group (fmap f i1) b (fmap f i2)
-    fmap f (Wrap b i) = Wrap b (fmap f i)
+instance Bifunctor Inquire where
+    bimap _ _ Atom = Atom
+    bimap f g (Predicate k r v) = Predicate (f k) r (g v)
+    bimap f g (Group i1 b i2) = Group (bimap f g i1) b (bimap f g i2)
+    bimap f g (Wrap b i) = Wrap b (bimap f g i)
 
-instance Foldable (Inquire k) where
-    foldr _ z Atom = z
-    foldr f z (Predicate _ _ v) = f v z
-    foldr f z (Group i1 _ i2) = foldr f (foldr f z i1) i2
-    foldr f z (Wrap _ i) = foldr f z i
+instance Bifoldable Inquire where
+    bifoldMap _ _ Atom = mempty
+    bifoldMap f g (Predicate k _ v) = f k `mappend` g v
+    bifoldMap f g (Group i1 _ i2) = bifoldMap f g i1 `mappend` bifoldMap f g i2
+    bifoldMap f g (Wrap _ i) = bifoldMap f g i
 
 -- Show stuff.
 -- This is really ugly to me, perhaps there's a better way.
@@ -118,6 +120,8 @@ main = do
     print $ generate notQ3
     print $ generate $ q4 <> mempty
     -- Do some functor thing.
-    print $ fmap tail q4
+    print $ second (map toUpper) q4
+    -- Check the law for one case.
+    print $ bimap id id notQ3 == id notQ3
     -- Do some foldable thing.
-    print $ "red" `Data.Foldable.elem` q4
+    print $ biany (const False) (=="red") q4
