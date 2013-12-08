@@ -11,13 +11,13 @@ license-file:        LICENSE
 author:              Hardy Jones
 maintainer:          jones3.hardy@gmail.com
 -- copyright:
-category:            Web
+category:            Network
 build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     Hinquire
+  exposed-modules:     Network.Hinquire
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.6 && <4.7,

@@ -1,4 +1,4 @@
-module Main where
+module Network.Hinquire where
 
 import Control.Applicative (Applicative, pure, (<*>), (<$>))
 import Data.Bifoldable
