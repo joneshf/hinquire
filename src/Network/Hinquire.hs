@@ -100,26 +100,3 @@ i1 <|||> i2 = Group i1 Or i2
 -- Slap a question mark in front of our inquire.
 generate :: (Show v, Show k) => Inquire k v -> String
 generate = ('?':) . show
-
-main :: IO ()
-main = do
-    let q1 = Predicate "color" Equal "red"
-    let q2 = Predicate "shape" NEqual "round"
-    let q3 = q1 <|||> q2
-    let q4 = q1 <&&&> q3
-    let q4' = q1 <> q3
-    let notQ3 = Wrap Not q3
-    print $ generate q1
-    print $ generate q2
-    print $ generate q3
-    print $ generate q4
-    print $ generate q4'
-    print $ "q4 == q4': " ++ show (q4 == q4')
-    print $ generate notQ3
-    print $ generate $ q4 <> mempty
-    -- Do some functor thing.
-    print $ second (map toUpper) q4
-    -- Check the law for one case.
-    print $ bimap id id notQ3 == id notQ3
-    -- Do some foldable thing.
-    print $ biany (const False) (=="red") q4
