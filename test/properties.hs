@@ -6,6 +6,8 @@ import Data.Bifunctor
 import Network.Hinquire
 import Test.QuickCheck
 import Test.QuickCheck.All
+import Test.Framework.TH
+import Test.Framework.Providers.QuickCheck2
 
 prop_bifunctorId i1 = bimap id id i1 == id i1
     where _ = i1 :: Inquire String String
@@ -30,5 +32,5 @@ instance (Arbitrary k, Arbitrary v) => Arbitrary (Inquire k v) where
         v' <- shrink v
         return $ Predicate k' r v'
 
-main = $(quickCheckAll)
+main = $defaultMainGenerator
 
