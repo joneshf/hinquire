@@ -6,9 +6,8 @@ import Data.Bifunctor
 import Data.Bitraversable
 import Data.Char
 import Data.Monoid
-import Prelude hiding (foldr)
 
--- rel and bool should not be strings, they should have their own types.
+-- | The relation between a key and value "time=now" or "cat!=dog"
 data Relation = Equal
               | NEqual
               | GThan
@@ -17,14 +16,17 @@ data Relation = Equal
               | LThanE
     deriving Eq
 
+-- | The boolean operation between a group of Inquires
 data GBool = And
            | Or
     deriving Eq
 
+-- | This is an optional negation wrapping an Inquire.
 data WBool = NoBool
            | Not
     deriving Eq
 
+-- | The meat of our package. This encapsulates our query logic.
 data Inquire k v = Atom
                  | Predicate k Relation v
                  | Group (Inquire k v) GBool (Inquire k v)
@@ -91,12 +93,14 @@ instance (Show k, Show v) => Show (Inquire k v) where
 empty :: Inquire k v
 empty = Atom
 
+-- | Conjoin two Inquires.
 (<&&&>) :: Inquire k v -> Inquire k v -> Inquire k v
 i1 <&&&> i2 = Group i1 And i2
 
+-- | Disjoin two Inquires.
 (<|||>) :: Inquire k v -> Inquire k v -> Inquire k v
 i1 <|||> i2 = Group i1 Or i2
 
--- Slap a question mark in front of our inquire.
+-- | Slap a question mark in front of our inquire.
 generate :: (Show v, Show k) => Inquire k v -> String
 generate = ('?':) . show
