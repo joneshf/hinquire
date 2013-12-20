@@ -46,10 +46,10 @@ instance Bifunctor Inquire where
     bimap f g (Wrap b i) = Wrap b (bimap f g i)
 
 instance Bifoldable Inquire where
-    bifoldMap _ _ Atom = mempty
-    bifoldMap f g (Predicate k _ v) = f k `mappend` g v
-    bifoldMap f g (Group i1 _ i2) = bifoldMap f g i1 `mappend` bifoldMap f g i2
-    bifoldMap f g (Wrap _ i) = bifoldMap f g i
+    bifoldr _ _ z Atom = z
+    bifoldr f g z (Predicate k _ v) = f k $ g v z
+    bifoldr f g z (Group i1 _ i2) = bifoldr f g (bifoldr f g z i2) i1
+    bifoldr f g z (Wrap _ i) = bifoldr f g z i
 
 instance Bitraversable Inquire where
     bitraverse _ _ Atom = pure Atom
