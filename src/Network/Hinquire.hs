@@ -1,6 +1,7 @@
 module Network.Hinquire where
 
 import Control.Applicative (Applicative, pure, (<*>), (<$>))
+import Data.Biapplicative
 import Data.Bifoldable
 import Data.Bifunctor
 import Data.Bitraversable
@@ -50,6 +51,16 @@ instance Bifoldable Inquire where
     bifoldr f g z (Predicate k _ v) = f k $ g v z
     bifoldr f g z (Group i1 _ i2) = bifoldr f g (bifoldr f g z i2) i1
     bifoldr f g z (Wrap _ i) = bifoldr f g z i
+
+instance Biapplicative Inquire where
+    bipure k v = Predicate k Equal v
+
+    (Predicate _ _ _) <<*>> Atom = Atom
+    (Predicate k1 _ v1) <<*>> (Predicate k2 r v2) = Predicate (k1 k2) r (v1 v2)
+    p@Predicate {} <<*>> (Group i1 b i2) = Group (p <<*>> i1) b (p <<*>> i2)
+    p@Predicate {} <<*>> (Wrap b i) = Wrap b (p <<*>> i)
+    (Group i1 b i2) <<*>> i3 = Group (i1 <<*>> i3) b (i1 <<*>> i3)
+    (Wrap b i1) <<*>> i2 = Wrap b (i1 <<*>> i2)
 
 instance Bitraversable Inquire where
     bitraverse _ _ Atom = pure Atom
