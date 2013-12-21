@@ -53,9 +53,9 @@ instance Bifoldable Inquire where
     bifoldr f g z (Wrap _ i) = bifoldr f g z i
 
 instance Biapplicative Inquire where
-    bipure k v = Predicate k Equal v
+    bipure k = Predicate k Equal
 
-    (Predicate _ _ _) <<*>> Atom = Atom
+    Predicate {} <<*>> Atom = Atom
     (Predicate k1 _ v1) <<*>> (Predicate k2 r v2) = Predicate (k1 k2) r (v1 v2)
     p@Predicate {} <<*>> (Group i1 b i2) = Group (p <<*>> i1) b (p <<*>> i2)
     p@Predicate {} <<*>> (Wrap b i) = Wrap b (p <<*>> i)
