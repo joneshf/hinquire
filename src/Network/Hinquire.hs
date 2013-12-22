@@ -1,12 +1,16 @@
 module Network.Hinquire where
 
-import Control.Applicative (Applicative, pure, (<*>), (<$>))
+import Prelude hiding (foldr)
+
+import Control.Applicative (Applicative, pure, (<*>), (<$>), liftA3)
 import Data.Biapplicative
 import Data.Bifoldable
 import Data.Bifunctor
 import Data.Bitraversable
 import Data.Char
+import Data.Foldable
 import Data.Monoid
+import Data.Traversable
 
 -- | The relation between a key and value "time=now" or "cat!=dog"
 data Relation = Equal
@@ -40,6 +44,36 @@ instance Monoid (Inquire k v) where
     mempty = empty
     mappend = (<&&&>)
 
+instance Functor (Inquire k) where
+    fmap _ Atom = Atom
+    fmap f (Predicate k r v) = Predicate k r (f v)
+    fmap f (Group i1 b i2) = Group (fmap f i1) b (fmap f i2)
+    fmap f (Wrap b i) = Wrap b (fmap f i)
+
+instance Monoid k => Applicative (Inquire k) where
+    pure = Predicate mempty Equal
+
+    Atom <*> _ = Atom
+    _ <*> Atom = Atom
+    (Predicate _ _ f) <*> (Predicate k r v) = Predicate k r (f v)
+    p@Predicate {} <*> (Group i1 b i2) = Group (p <*> i1) b (p <*> i2)
+    p@Predicate {} <*> (Wrap b i) = Wrap b (p <*> i)
+    (Group i1 b i2) <*> i3 = Group (i1 <*> i3) b (i2 <*> i3)
+    (Wrap b i1) <*> i2 = Wrap b (i1 <*> i2)
+
+instance Foldable (Inquire k) where
+    foldr _ z Atom = z
+    foldr f z (Predicate _ _ v) = f v z
+    foldr f z (Group i1 _ i2) = foldr f (foldr f z i2) i1
+    foldr f z (Wrap _ i) = foldr f z i
+
+instance Traversable (Inquire k) where
+    traverse _ Atom = pure Atom
+    traverse f (Predicate k r v) = Predicate <$> pure k <*> pure r <*> f v
+    traverse f (Group i1 b i2) =
+        Group <$> traverse f i1 <*> pure b <*> traverse f i1
+    traverse f (Wrap b i) = Wrap <$> pure b <*> traverse f i
+
 instance Bifunctor Inquire where
     bimap _ _ Atom = Atom
     bimap f g (Predicate k r v) = Predicate (f k) r (g v)
@@ -55,8 +89,9 @@ instance Bifoldable Inquire where
 instance Biapplicative Inquire where
     bipure k = Predicate k Equal
 
-    Predicate {} <<*>> Atom = Atom
-    (Predicate k1 _ v1) <<*>> (Predicate k2 r v2) = Predicate (k1 k2) r (v1 v2)
+    Atom <<*>> _ = Atom
+    _ <<*>> Atom = Atom
+    (Predicate f _ g) <<*>> (Predicate k2 r v2) = Predicate (f k2) r (g v2)
     p@Predicate {} <<*>> (Group i1 b i2) = Group (p <<*>> i1) b (p <<*>> i2)
     p@Predicate {} <<*>> (Wrap b i) = Wrap b (p <<*>> i)
     (Group i1 b i2) <<*>> i3 = Group (i1 <<*>> i3) b (i1 <<*>> i3)
