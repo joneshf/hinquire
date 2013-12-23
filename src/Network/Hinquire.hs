@@ -3,6 +3,7 @@ module Network.Hinquire where
 import Prelude hiding (foldr)
 
 import Control.Applicative (Applicative, pure, (<*>), (<$>), liftA3)
+import Control.Monad
 import Data.Biapplicative
 import Data.Bifoldable
 import Data.Bifunctor
@@ -74,6 +75,16 @@ instance Traversable (Inquire k) where
         Group <$> traverse f i1 <*> pure b <*> traverse f i1
     traverse f (Wrap b i) = Wrap <$> pure b <*> traverse f i
 
+instance Monoid k => Monad (Inquire k) where
+    return = Predicate mempty Equal
+
+    Atom >>= _ = Atom
+    -- This seems wrong,
+    -- we've forgotten everything about our Predicate except the value
+    (Predicate _ _ v) >>= f = f v
+    (Group i1 b i2) >>= f = Group (i1 >>= f) b (i2 >>= f)
+    (Wrap b i) >>= f = Wrap b (i >>= f)
+
 instance Bifunctor Inquire where
     bimap _ _ Atom = Atom
     bimap f g (Predicate k r v) = Predicate (f k) r (g v)
@@ -103,6 +114,18 @@ instance Bitraversable Inquire where
     bitraverse f g (Group i1 b i2) =
         Group <$> bitraverse f g i1 <*> pure b <*> bitraverse f g i2
     bitraverse f g (Wrap b i) = Wrap <$> pure b <*> bitraverse f g i
+
+class Dyad d where
+    bireturn :: a -> b -> d a b
+    (>>==) :: d a b -> (a -> b -> d e f) -> d e f
+
+instance Dyad Inquire where
+    bireturn k v = Predicate k Equal v
+
+    Atom >>== _ = Atom
+    (Predicate k _ v) >>== f = f k v
+    (Group i1 b i2) >>== f = Group (i1 >>== f) b (i2 >>== f)
+    (Wrap b i) >>== f = Wrap b (i >>== f)
 
 -- Show stuff.
 
