@@ -2,7 +2,7 @@ module Network.Hinquire where
 
 import Prelude hiding (foldr)
 
-import Control.Applicative (Applicative, pure, (<*>), (<$>), liftA3)
+import Control.Applicative (Alternative (..), Applicative, pure, (<*>), (<$>), liftA3)
 import Control.Monad
 import Data.Biapplicative
 import Data.Bifoldable
@@ -42,7 +42,7 @@ data Inquire k v = Atom
 -- Algebra stuff
 
 instance Monoid (Inquire k v) where
-    mempty = empty
+    mempty = Atom
     mappend = (<&&&>)
 
 instance Functor (Inquire k) where
@@ -61,6 +61,12 @@ instance Monoid k => Applicative (Inquire k) where
     p@Predicate {} <*> (Wrap b i) = Wrap b (p <*> i)
     (Group i1 b i2) <*> i3 = Group (i1 <*> i3) b (i2 <*> i3)
     (Wrap b i1) <*> i2 = Wrap b (i1 <*> i2)
+
+instance Monoid k => Alternative (Inquire k) where
+    empty = Atom
+
+    Atom <|> i = i
+    i    <|> _ = i
 
 instance Foldable (Inquire k) where
     foldr _ z Atom = z
@@ -120,7 +126,7 @@ class Dyad d where
     (>>==) :: d a b -> (a -> b -> d e f) -> d e f
 
 instance Dyad Inquire where
-    bireturn k v = Predicate k Equal v
+    bireturn k = Predicate k Equal
 
     Atom >>== _ = Atom
     (Predicate k _ v) >>== f = f k v
@@ -158,9 +164,6 @@ instance (Show k, Show v) => Show (Inquire k v) where
     show (Group l b r@Predicate {}) = "(" ++ show l ++ ")" ++ show b ++ show r
     show (Group l b r) = "(" ++ show l ++ ")" ++ show b ++ "(" ++ show r ++ ")"
     show (Wrap n i) = show n ++ "(" ++ show i ++ ")"
-
-empty :: Inquire k v
-empty = Atom
 
 -- | Conjoin two Inquires.
 (<&&&>) :: Inquire k v -> Inquire k v -> Inquire k v
