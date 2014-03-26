@@ -2,13 +2,11 @@ module Network.Hinquire where
 
 import Prelude hiding (foldr)
 
-import Control.Applicative (Alternative (..), Applicative, pure, (<*>), (<$>), liftA3)
-import Control.Monad
+import Control.Applicative (Alternative (..), Applicative, pure, (<*>), (<$>))
+
 import Data.Biapplicative
 import Data.Bifoldable
-import Data.Bifunctor
 import Data.Bitraversable
-import Data.Char
 import Data.Foldable
 import Data.Monoid
 import Data.Traversable
@@ -78,7 +76,7 @@ instance Traversable (Inquire k) where
     traverse _ Atom = pure Atom
     traverse f (Predicate k r v) = Predicate <$> pure k <*> pure r <*> f v
     traverse f (Group i1 b i2) =
-        Group <$> traverse f i1 <*> pure b <*> traverse f i1
+        Group <$> traverse f i1 <*> pure b <*> traverse f i2
     traverse f (Wrap b i) = Wrap <$> pure b <*> traverse f i
 
 instance Monoid k => Monad (Inquire k) where
@@ -111,7 +109,7 @@ instance Biapplicative Inquire where
     (Predicate f _ g) <<*>> (Predicate k2 r v2) = Predicate (f k2) r (g v2)
     p@Predicate {} <<*>> (Group i1 b i2) = Group (p <<*>> i1) b (p <<*>> i2)
     p@Predicate {} <<*>> (Wrap b i) = Wrap b (p <<*>> i)
-    (Group i1 b i2) <<*>> i3 = Group (i1 <<*>> i3) b (i1 <<*>> i3)
+    (Group i1 b i2) <<*>> i3 = Group (i1 <<*>> i3) b (i2 <<*>> i3)
     (Wrap b i1) <<*>> i2 = Wrap b (i1 <<*>> i2)
 
 instance Bitraversable Inquire where

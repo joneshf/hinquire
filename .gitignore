@@ -2,3 +2,5 @@ dist
 *.o
 *.hi
 Hinquire
+.cabal-sandbox
+cabal.sandbox.config
